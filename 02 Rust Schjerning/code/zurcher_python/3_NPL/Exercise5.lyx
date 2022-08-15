@@ -1,0 +1,773 @@
+#LyX 2.2 created this file. For more info see http://www.lyx.org/
+\lyxformat 508
+\begin_document
+\begin_header
+\save_transient_properties true
+\origin unavailable
+\textclass article
+\use_default_options true
+\maintain_unincluded_children false
+\language english
+\language_package default
+\inputencoding auto
+\fontencoding global
+\font_roman "default" "default"
+\font_sans "default" "default"
+\font_typewriter "default" "default"
+\font_math "auto" "auto"
+\font_default_family default
+\use_non_tex_fonts false
+\font_sc false
+\font_osf false
+\font_sf_scale 100 100
+\font_tt_scale 100 100
+\graphics default
+\default_output_format default
+\output_sync 0
+\bibtex_command default
+\index_command default
+\paperfontsize 12
+\spacing single
+\use_hyperref false
+\papersize default
+\use_geometry true
+\use_package amsmath 1
+\use_package amssymb 1
+\use_package cancel 1
+\use_package esint 1
+\use_package mathdots 0
+\use_package mathtools 1
+\use_package mhchem 1
+\use_package stackrel 1
+\use_package stmaryrd 1
+\use_package undertilde 1
+\cite_engine basic
+\cite_engine_type default
+\biblio_style plain
+\use_bibtopic false
+\use_indices false
+\paperorientation portrait
+\suppress_date false
+\justification true
+\use_refstyle 0
+\index Index
+\shortcut idx
+\color #008000
+\end_index
+\leftmargin 3cm
+\topmargin 3cm
+\rightmargin 3cm
+\bottommargin 3cm
+\secnumdepth 3
+\tocdepth 3
+\paragraph_separation indent
+\paragraph_indentation default
+\quotes_language english
+\papercolumns 1
+\papersides 1
+\paperpagestyle default
+\tracking_changes false
+\output_changes false
+\html_math_output 0
+\html_css_as_file 0
+\html_be_strict false
+\end_header
+
+\begin_body
+
+\begin_layout Standard
+\align center
+
+\shape smallcaps
+\size largest
+Exercise set 5: NPL
+\end_layout
+
+\begin_layout Standard
+\align center
+Dynamic Programming Spring 2020,
+\end_layout
+
+\begin_layout Standard
+\align center
+Lecture x, week 9-10
+\end_layout
+
+\begin_layout Standard
+\align center
+by Patrick Kofod Mogensen and Maria Juul Hansen
+\end_layout
+
+\begin_layout Section*
+Introduction
+\end_layout
+
+\begin_layout Standard
+This week we will revisit the Rust model.
+ We will try to estimate the parameters using an alternative method, namely
+ Nested Pseudo Likelihood (NPL) as proposed in Aguirregabiria and Mira (2002).
+\end_layout
+
+\begin_layout Section*
+NPL
+\end_layout
+
+\begin_layout Standard
+In NFXP we had an outer maximum likelihood loop searching over 
+\begin_inset Formula $\theta$
+\end_inset
+
+-values, and an inner solution loop making sure that 
+\begin_inset Formula $EV$
+\end_inset
+
+ was updated for each 
+\begin_inset Formula $\theta$
+\end_inset
+
+-trial.
+ Now, we swap the nesting.
+ This means that we are going to solve the model in the outer loop using
+ policy iterations, but every time we take a step towards the solution,
+ we fully estimate a conditional logit.
+ This is why it is called nested pseudo likelihood (NPL), since the pseudo
+ likelihood step is nested in the solution method.
+ Let us first consider the policy iterations.
+ Policy iterations essentially take a policy, use it to update the value
+ function, and then use the updated value function to calculate a new policy.
+ This is a very efficient method, obtaining quadratic convergence rates.
+ In NPL our policies are the choice probabilities.
+ 
+\end_layout
+
+\begin_layout Standard
+In the inner loop of NFXP, we solve for the solution of the model using
+ value function iterations and Newton-Kantorovich iterations.
+ Aguirregabiria and Mira (2002) [AM] show how we can solve this model using
+ policy iterations on the space of conditional choice probabilities instead.
+ This means that instead of searching for a fixed point in 
+\begin_inset Formula $EV=\Gamma(EV)$
+\end_inset
+
+, we look for a fixed point in 
+\begin_inset Formula $P=\Psi(P)$
+\end_inset
+
+, where 
+\begin_inset Formula $\mbox{\Psi}:[0,1]^{N}\to[0,1]^{N}$
+\end_inset
+
+is the policy iteration operator.
+ Let us first see how this operator is derived.
+ Details are in AM, but it is really surprisingly simple.
+ Notation is as follow: 
+\begin_inset Formula $u(s,a)$
+\end_inset
+
+ is the instantaneous utility function, where 
+\begin_inset Formula $s=(x,\epsilon)$
+\end_inset
+
+, and 
+\begin_inset Formula $a\in A$
+\end_inset
+
+ is the decision.
+ In addition, 
+\begin_inset Formula $u(\cdot,\cdot)$
+\end_inset
+
+ is parameterized by a vector 
+\begin_inset Formula $\theta_{c}$
+\end_inset
+
+.
+ We dichotomize such that 
+\begin_inset Formula $x$
+\end_inset
+
+ contains observed states, and 
+\begin_inset Formula $\epsilon$
+\end_inset
+
+ contains unobserved states.
+ The joint state 
+\begin_inset Formula $s$
+\end_inset
+
+ follows a transition process characterized by the transition probabilities
+\begin_inset Formula 
+\[
+p(x',\epsilon'|x,a,\epsilon)=g(\epsilon'|x')f(x'|x,a),
+\]
+
+\end_inset
+
+which is simply Rust's (CI) assumption.
+ The transition process 
+\begin_inset Formula $g(\epsilon|x)$
+\end_inset
+
+ is parameterized by 
+\begin_inset Formula $\theta_{g}$
+\end_inset
+
+, and 
+\begin_inset Formula $f(x'|x,a)$
+\end_inset
+
+ is parameterized by 
+\begin_inset Formula $\theta_{f}.$
+\end_inset
+
+ Assume a discount factor 
+\begin_inset Formula $\beta\in(0,1)$
+\end_inset
+
+ and an infinite horizon.
+ Then we are in 
+\begin_inset Quotes eld
+\end_inset
+
+Blackwell territory
+\begin_inset Quotes erd
+\end_inset
+
+ (since we also have discrete states) with a value function 
+\begin_inset Formula $V(s)$
+\end_inset
+
+ as the solution to
+\begin_inset Formula 
+\[
+V(s)=\max_{a\in A}\left\{ u(s,a)+\beta\int V(s')p(ds'|s,a)\right\} .
+\]
+
+\end_inset
+
+ To solve this, first assume that 
+\begin_inset Formula $u(s,a)=\tilde{u}(x,a)+\epsilon(a)$
+\end_inset
+
+.
+ We can then use VFI and numerical integration and find 
+\begin_inset Formula $V(s)$
+\end_inset
+
+.
+ This is computationally expensive, so we might do as Rust, and solve for
+ 
+\begin_inset Formula $EV$
+\end_inset
+
+ defined as
+\begin_inset Formula 
+\[
+EV(x,\epsilon,a)\equiv\int_{y}\int_{\eta}V(y,\eta)p(\mathrm{d}y,\mathrm{{d}\eta|x,\epsilon,a,\theta_{g},\theta_{f})}.
+\]
+
+\end_inset
+
+From this we get the following Bellman equation
+\begin_inset Formula 
+\begin{eqnarray*}
+EV(s,a) & = & \int_{y}\int_{\eta}\max_{a\in A}\left\{ u(s,a)+\beta EV(s',a))\right\} p(\mathrm{d}y,\mathrm{{d}\eta|x,\epsilon,a,\theta_{g},\theta_{f})}\\
+ & = & \int_{y}\int_{\eta}\max_{a\in A}\left\{ u(s,a)+\beta EV(s',a))\right\} g(\mathrm{{d}\eta|x,\theta_{g})f(\mathrm{d}}y|x,a,\theta_{f})
+\end{eqnarray*}
+
+\end_inset
+
+The inner integral over the 
+\begin_inset Formula $\max$
+\end_inset
+
+ is the social surplus function from McFadden (1973), which has a closed
+ form solution given our usual iid extreme value type 1 shocks.
+ This means we simply have 
+\begin_inset Formula $EV(x,a)$
+\end_inset
+
+, since it doesn't depend on 
+\begin_inset Formula $\epsilon$
+\end_inset
+
+.
+ AM do something similar, but define a different value function.
+ This is called the integrated value function or ex-ante value function,
+ and is defined as
+\begin_inset Formula 
+\[
+V_{\sigma}(x)=\int V(x,\eta)g(\mathrm{d}\eta|x,\theta_{g}).
+\]
+
+\end_inset
+
+ Notice how this is only a function of 
+\begin_inset Formula $x$
+\end_inset
+
+, not 
+\begin_inset Formula $a$
+\end_inset
+
+.
+ Just as in Rust, this leads to a contraction mapping, this time in 
+\begin_inset Formula $V_{\sigma}$
+\end_inset
+
+ instead of 
+\begin_inset Formula $EV$
+\end_inset
+
+.
+ Before we had that 
+\begin_inset Formula $EV(s,a)=EV(x,a)$
+\end_inset
+
+ was the social surplus function integrated with respect to the transition
+ process of the observed state.
+ In AM's ex-ante value function approach, we simply get that 
+\begin_inset Formula $V_{\sigma}$
+\end_inset
+
+ is the social surplus function.
+ The Hotz-Miller insight was that the partial derivative of the social surplus
+ function with respect to a choice-specific value function is the associated
+ conditional choice probability (CCP), and that this mapping is invertible
+ such that we can find value functions from CCPs.
+ We proceed as follows: 
+\end_layout
+
+\begin_layout Enumerate
+Re-write the ex-ante value function by 
+\begin_inset Quotes eld
+\end_inset
+
+replacing
+\begin_inset Quotes erd
+\end_inset
+
+ the integral over 
+\begin_inset Formula $\epsilon$
+\end_inset
+
+ with CCPs
+\end_layout
+
+\begin_layout Enumerate
+Isolate 
+\begin_inset Formula $V_{\sigma}$
+\end_inset
+
+to obtain our inverse mapping 
+\begin_inset Formula $\varphi:[0,1]^{N}\to\mathbf{V}$
+\end_inset
+
+, where 
+\begin_inset Formula $V_{\sigma}\in\mathbb{\mathbf{V}}$
+\end_inset
+
+.
+ 
+\end_layout
+
+\begin_layout Enumerate
+Form the composite function 
+\begin_inset Formula $\Psi(P):[0,1]^{N}\to[0,1]^{N}$
+\end_inset
+
+ to create a mapping giving us current period best CCPs 
+\begin_inset Formula $P'=\Psi(P)=\Lambda(\varphi(P))$
+\end_inset
+
+ given some belief of future behaviour 
+\begin_inset Formula $P$
+\end_inset
+
+.
+ 
+\end_layout
+
+\begin_layout Standard
+We want to find a 
+\begin_inset Formula $P^{*}$
+\end_inset
+
+ such that 
+\begin_inset Formula $\Lambda(\varphi(P^{*}))=P^{*}.$
+\end_inset
+
+ The interpretation of such a fixed point would be: if I think I will follow
+ 
+\begin_inset Formula $P^{*}(x)$
+\end_inset
+
+ in the future, 
+\begin_inset Formula $P^{*}(x)$
+\end_inset
+
+ is also my optimal behaviour today.
+ This should also explain the name ex-ante above.
+ 
+\begin_inset Formula $P^{*}$
+\end_inset
+
+ tells us what the best randomization policy is ex-ante the realization
+ of the shock.
+ Notice we are talking about choice probabilities as behaviour.
+ This is because we want to characterize behaviour without using 
+\begin_inset Formula $\epsilon$
+\end_inset
+
+ explicitly.
+ This is fine, since our final goal is estimation, and there we do not know
+ 
+\begin_inset Formula $\epsilon$
+\end_inset
+
+.
+\end_layout
+
+\begin_layout Subsection*
+Finding 
+\begin_inset Formula $(\Psi,\varphi)$
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+First consider a given 
+\begin_inset Formula $x\in X$
+\end_inset
+
+.
+ What is the Bellman equation at this 
+\begin_inset Formula $x$
+\end_inset
+
+? This is the integrated Bellman equation we saw earlier.
+ An important step in doing NPL is to realize that this is equivalent to
+ (see Aguirregabiria (1999))
+\begin_inset Formula 
+\begin{equation}
+V_{\sigma}(x)=\sum_{a\in A}P(a|x)\left\{ \tilde{u}(x,a)+E[\epsilon(a)|x,a]+\beta\sum_{x'}f(x'|x,a)V_{\sigma}(x')\right\} .\label{eq:nplbell}
+\end{equation}
+
+\end_inset
+
+Here, we have assumed that 
+\begin_inset Formula $X$
+\end_inset
+
+ is finite (discrete).
+ The conditional choice probabilities are defined as
+\begin_inset Formula 
+\[
+P(a|x)=\int I\left\{ a=\arg\max_{j\in A}[v(x,j)+\epsilon(j)]\right\} g(\mathrm{{d}\epsilon|x)}.
+\]
+
+\end_inset
+
+With our extreme value type I distributional assumption on 
+\begin_inset Formula $\epsilon$
+\end_inset
+
+, this is simply the conditional multinomial logit formula, which has a
+ closed form.
+ Given future behaviour 
+\begin_inset Formula $P$
+\end_inset
+
+ and the induced choice-specific continuation values, this is our 
+\begin_inset Formula $\Psi$
+\end_inset
+
+-mapping.
+ Now we just need to find 
+\begin_inset Formula $\varphi$
+\end_inset
+
+.
+ This is done by stacking the equations in 
+\begin_inset CommandInset ref
+LatexCommand ref
+reference "eq:nplbell"
+
+\end_inset
+
+ for all 
+\begin_inset Formula $x$
+\end_inset
+
+ to get 
+\begin_inset Formula 
+\[
+V_{\sigma}=\sum_{a\in A}P(a)*[\tilde{u}(a)+e(a,P)+\beta F(a)V_{\sigma}].
+\]
+
+\end_inset
+
+Recognizing that his is possible puts us in a very strong position, as this
+ can easily be rewritten as
+\begin_inset Formula 
+\begin{eqnarray*}
+V_{\sigma} & = & (I-\beta F^{U}(P))^{-1}\left\{ \sum_{a\in A}P(a)*[\tilde{u}(a)+e(a,P)]\right\} \\
+V_{\sigma} & = & \varphi(P).
+\end{eqnarray*}
+
+\end_inset
+
+To calculate this, we need to know what 
+\begin_inset Formula $e(a,P)$
+\end_inset
+
+ is, but other than that, it is simple linear algebra.
+ The function (or vector) is a stack of conditional expected values of choice
+ 
+\begin_inset Formula $j$
+\end_inset
+
+-specific shock 
+\begin_inset Formula $\epsilon(j)$
+\end_inset
+
+ conditional on 
+\begin_inset Formula $x$
+\end_inset
+
+, and conditional on 
+\begin_inset Formula $a$
+\end_inset
+
+ actually being optimal (remember it is multiplied by the CCP of 
+\begin_inset Formula $a$
+\end_inset
+
+).
+ This means that
+\begin_inset Formula 
+\[
+e(a,P)\equiv E[\epsilon(a)|x,a]=\left(P(a|x)\right)^{-1}\int\epsilon(a)\cdot\left\{ \tilde{v}(x,a)+\epsilon(a)\geq\tilde{v}(x,j)+\epsilon(j),\forall j\in A\right\} g(\mathrm{d}\epsilon|x).
+\]
+
+\end_inset
+
+This is the usual conditional expectation, where we condition on two things:
+ 
+\begin_inset Formula $x$
+\end_inset
+
+, and 
+\begin_inset Formula $a$
+\end_inset
+
+ being optimal (having the highest choice-specific value).
+ For a specific 
+\begin_inset Formula $x$
+\end_inset
+
+, this expectation is not 
+\begin_inset Formula $0$
+\end_inset
+
+, even though 
+\begin_inset Formula $E[\epsilon(a)]=0$
+\end_inset
+
+.
+ In some states it might be more probable that 
+\begin_inset Formula $a=1$
+\end_inset
+
+ is more likely to be optimal, even though the converse is true in other
+ states.
+\end_layout
+
+\begin_layout Subsection*
+Implementation - spelling it out
+\end_layout
+
+\begin_layout Itemize
+Step 1) Set K=0.
+\end_layout
+
+\begin_layout Itemize
+Step 2) Estimate (non-parametrically) 
+\begin_inset Formula $\theta_{p}$
+\end_inset
+
+ .
+ Here it is 
+\begin_inset Formula $\pi_{0},\pi_{1},\ldots,\pi_{max}$
+\end_inset
+
+, where 
+\begin_inset Formula $\pi_{max}$
+\end_inset
+
+is the probability associated with the largest increase in mileage from
+ one period to the next.
+\end_layout
+
+\begin_layout Itemize
+Step 3) Initialize with a guess for CCPs (can be anything, but closer to
+ true will speed things up) 
+\begin_inset Formula $\hat{P}_{K}$
+\end_inset
+
+, and parameters 
+\begin_inset Formula $\hat{\theta}_{c,K}$
+\end_inset
+
+.
+ 
+\end_layout
+
+\begin_layout Itemize
+Step 4.1) Maximize the likelihood of observing the data for fixed 
+\begin_inset Formula $\hat{P}_{K}$
+\end_inset
+
+, update 
+\begin_inset Formula $\hat{\theta}_{c,K+1}=\arg\max_{\theta}\ell^{1}(\theta|data,\theta_{p},\hat{P}_{K})$
+\end_inset
+
+
+\end_layout
+
+\begin_layout Itemize
+Step 4.2) Update 
+\begin_inset Formula $\hat{P}_{K+1}=\Psi(P)=\Lambda\left(\varphi\left(\hat{P}_{K},\hat{\theta}_{c,K+1}\right)\right)$
+\end_inset
+
+.
+\end_layout
+
+\begin_layout Itemize
+Step 4.3) If 
+\begin_inset Formula $||\hat{P}_{K+1}-\hat{P}_{K}||_{\infty}<\mbox{tol}_{P}$
+\end_inset
+
+ and 
+\begin_inset Formula $||\hat{\theta}_{K+1}-\hat{\theta}_{K}||_{\infty}<\text{tol}_{\theta}$
+\end_inset
+
+ stop, and accept the current iterates, else start from Step 4).
+\end_layout
+
+\begin_layout Subsection*
+Questions 
+\end_layout
+
+\begin_layout Standard
+Note the followin about notation: P is used as the variable name for the
+ Markovian transition matrix in the Rust-problem and code.
+ The correspondence is: P (code) = F (notes), pk (code) = P (notes), Fu
+ (code) = 
+\begin_inset Formula $F^{U}$
+\end_inset
+
+(notes).
+ In the following we use code notation
+\end_layout
+
+\begin_layout Enumerate
+Look at the ReadMe.txt to get an overview of the code
+\end_layout
+
+\begin_layout Enumerate
+What is the difference between 
+\begin_inset Formula $EV(x,a)$
+\end_inset
+
+ and 
+\begin_inset Formula $V_{\sigma}(x)$
+\end_inset
+
+? 
+\end_layout
+
+\begin_layout Enumerate
+Write the formula for 
+\begin_inset Formula $P=\Lambda(V_{\sigma})$
+\end_inset
+
+, 
+\begin_inset Formula $V_{\sigma}=\varphi(P)$
+\end_inset
+
+ and 
+\begin_inset Formula $P=\Psi(P)$
+\end_inset
+
+, exploiting the extreme value type I distribution on 
+\begin_inset Formula $\epsilon$
+\end_inset
+
+.
+ (Hint: what is 
+\begin_inset Formula $e(a,P)\equiv E[\epsilon(a)|x,a]$
+\end_inset
+
+ under this distributional assumption?).
+ Insert the found formulars under NPL.phi (
+\begin_inset Formula $V_{\sigma}=\varphi(P)$
+\end_inset
+
+) and NPL.lambdaa ( 
+\begin_inset Formula $P=\Lambda(V_{\sigma})$
+\end_inset
+
+)
+\end_layout
+
+\begin_layout Enumerate
+Estimate the model using NPL.
+ In order to estimate the model you should understand npl.estimate, npl.ll
+ (skip the part of computing the gradient and the Hessian).
+ 
+\end_layout
+
+\begin_layout Enumerate
+Plot the convergense of psi, or something
+\end_layout
+
+\begin_layout Enumerate
+Calculate the CCPs from both NFXP and NPL and compare the results (from
+ line 70 in the script run_kpie.m).
+ 
+\end_layout
+
+\begin_layout Enumerate
+\begin_inset Formula $F^{U}(pk)$
+\end_inset
+
+ is the unconditional transition probabilities induced by 
+\begin_inset Formula $pk$
+\end_inset
+
+ (vector) - what does that mean? (Hint: to look at Fu and P, you can create
+ a guess of pk0 and P (not the CCPs!), place a keyboard in line 17 of npl.m
+ and type npl.phi(mp,pk0,P) in the console (with these arguments in your
+ workspace of course).
+ To look at the non-sparse matrices, use the function full.
+ E.g.
+ typing Fu=full(Fu) in the console returns the non-sparse Fu.).
+ STADIG MATLAB
+\end_layout
+
+\begin_layout Enumerate
+Use spy() to compare P (not(!) the CCPs) and Fu in the code.
+ What is the difference between the two? Hint: add the spy functions in
+ the lines just before a keyboard.
+\end_layout
+
+\begin_layout Enumerate
+What determines if NFXP is computationally cheaper to use than NPL? Think
+ about what is in the inner loop of either algorithm.
+ 
+\end_layout
+
+\end_body
+\end_document
