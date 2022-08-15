@@ -1,10 +1,10 @@
-% clear all
+clear all
 % ************************************
 % Model solution used for DGP
 % ************************************
 % Switches:
 
-nMC=3; 	  	% number of MC samples
+nMC=2; 	  	% number of MC samples
 N=50;			% Number of busses to simulate 
 T=119;			% Number of time periods to simulate 
 
@@ -32,8 +32,9 @@ nfxp_results=struct;
 
 % starting values
 mp=mp0;
-mp.RC=0;
-mp.c=0;
+% mp.RC=0;
+% mp.c=0;
+
 
 %main loop
 for i_mc = 1:nMC;

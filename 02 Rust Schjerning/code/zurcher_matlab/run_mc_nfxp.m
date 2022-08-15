@@ -1,16 +1,16 @@
 % run_mc_nfxp: Monte Carlo experiement to asses the performance of NFXP on Rust's engine repplacement model
-clear
+clear all
 % Read default parameters in to struct mp 
 mp0.bellman_type='ev';
 
 %% Adjustments to parameters 
-mp0.pnames_P={'p'};   % set mp0.pnames_P={}; to skip estimation of transition parameters  
-%mp0.pnames_P={};   % set mp0.pnames_P={}; to skip estimation of transition parameters  
+mp0.pnames_P={'p'};   % estimate transition parameters  
+%mp0.pnames_P={};   % skip estimation of transition parameters  
 
 mp=zurcher.setup(mp0);		
 
 % local constants:
-nMC=100; 		% number of MC samples
+nMC=2; 		% number of MC samples
 N=50;			% Number of busses to simulate 
 T=119;			% Number of time periods to simulate 
 

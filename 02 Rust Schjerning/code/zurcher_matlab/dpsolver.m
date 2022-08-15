@@ -17,7 +17,7 @@ classdef dpsolver
       ap.sa_tol=      1.0e-10;       % Absolute tolerance before (in dpsolver.poly: tolerance before switching to N-K algorithm)
       ap.max_fxpiter= 5;             % Maximum number of times to switch between Newton-Kantorovich iterations and contraction iterations.
       ap.pi_max=      10;            % Maximum number of Newton-Kantorovich steps
-      ap.pi_tol=      1.0e-12;       % Final exit tolerance in fixed point algorithm, measured in units of numerical precision
+      ap.pi_tol=      1.0e-11;       % Final exit tolerance in fixed point algorithm, measured in units of numerical precision
       ap.tol_ratio=   1.0e-02;       % Relative tolerance before switching to N-K algorithm  
                                      % when discount factor is supplied as input in dpsolver.poly
       ap.printfxp=    0;             % Print iteration info for fixed point algorithm
@@ -68,7 +68,6 @@ classdef dpsolver
 
           % SECTION A: CONTRACTION ITERATIONS
           if ap.printfxp>0
-              fprintf('\n');
               fprintf('Begin contraction iterations (for the %d. time)\n',k);
           end;
           if nargin>3
@@ -79,20 +78,19 @@ classdef dpsolver
 
           % SECTION 2: NEWTON-KANTOROVICH ITERATIONS
           if ap.printfxp>0
-              fprintf('\n');
               fprintf('Begin Newton-Kantorovich iterations (for the %d. time)\n',k);
           end
           [V0, P, dV, iter(k).nk]=dpsolver.nk(bellman, V0, ap); 
 
           if iter(k).nk.converged
             if ap.printfxp>0
-                   fprintf('Convergence achieved!\n\n');
-                   fprintf('Elapsed time: %3.5f (seconds)\n',toc(solutiontime));
+                   fprintf('Convergence achieved!\n');
+                   fprintf('Total elapsed time: %3.5f (seconds)\n',toc(solutiontime));
                end
                break; %out of poly-algorithm loop
            else
                if k>=ap.max_fxpiter
-                   warning('No convergence! Maximum number of iterations exceeded without convergence!');
+                   warning('Maximum number of iterations exceeded without convergence!');
                    break; %out of poly-algorithm loop with no convergence
                end
           end
@@ -128,6 +126,8 @@ classdef dpsolver
       iter.tol=nan(ap.sa_max,1);
       iter.rtol=nan(ap.sa_max,1);
       iter.converged=false;
+      iter.message = sprintf('Maximum number of iterations exceeded without convergence!');
+
       for i=1:ap.sa_max; 
         V=bellman(V0);
 
@@ -139,7 +139,7 @@ classdef dpsolver
         % Stopping criteria
         if nargin >3
         if (i>=ap.sa_min) && (abs(bet-iter.rtol(i)) < ap.tol_ratio)
-          iter.message='SA stopped prematurely due to relative tolerance. Start NK iterations';
+          iter.message='SA stopped prematurely due to rel. tolerance. Begin NK iterations';
           break
         end
         end
@@ -207,7 +207,7 @@ classdef dpsolver
 
         if (iter.tol(i) < ltol);
              % Convergence achieved
-             iter.message=sprintf('N-K converged after %d iterations, tolerance: %10g\n',i, iter.tol(i));
+             iter.message=sprintf('N-K converged after %d iterations, tolerance: %10g',i, iter.tol(i));
              iter.converged=true;
              break
         end
@@ -230,12 +230,8 @@ classdef dpsolver
       end   
 
       if (ap.printfxp>0)      % print final output
-        if iter.converged==1;
-          fprintf('%s',iter.message);
-          else
-          fprintf('Maximum number of iterations reached, tolerance: %10g\n',iter.tol(end));
-        end
-        fprintf('Elapsed time: %3.5f (seconds)\n',iter.time)
+        fprintf('%s\n',iter.message);
+        fprintf('Elapsed time: %3.5f (seconds)\n\n',iter.time)
       end
     end % end DPSOLVER.print
 

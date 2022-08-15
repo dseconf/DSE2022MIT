@@ -4,6 +4,8 @@ classdef zurcher
 methods (Static)
   function mp = setup(mpopt)
     % zurcher.setup: Sets default parameters equal to parameters in Table X in Rust (1987).    
+    mp.bustypes=[1,2,3,4];    % Vector with chosen bus-types in Rust's data (can be 1,2,3,4) 
+
     % Spaces
     mp.n=175;                       % Number of grid points     
     mp.max=450;                     % Max of mileage
@@ -13,7 +15,6 @@ methods (Static)
     mp.RC    = 11.7257;                        % Replacement cost
     mp.c     = 2.45569;                        % Cost parameter
     mp.beta  = 0.9999;                         % Discount factor
-
     % Type of bellman equation: 
     %   mp.bellman_type='ev': use bellman equation in expected value function space 
     %                         (state and choice specific)
@@ -24,7 +25,6 @@ methods (Static)
     % parameters to estimate (set to empty to hold parameter fixed and skip estimation)
     mp.pnames_u={'RC', 'c'};  
     mp.pnames_P={'p'};  
-    mp.bustypes=[1,2,3,4];    % Vector with chosen bus-types in Rust's data (can be 1,2,3,4) 
 
     mp.ap=dpsolver.setup;
 
@@ -184,6 +184,7 @@ methods (Static)
     maxV=max(vK, vR);
     V=(maxV + log(exp(vK-maxV)  +  exp(vR-maxV))); 
     ev=P{1}*V;
+
 
     % If requested, also compute choice probability
     if nargout>1 

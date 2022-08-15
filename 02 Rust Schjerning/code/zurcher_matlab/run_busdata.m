@@ -3,6 +3,7 @@
 % clear
 
 % methods to cosinder
+% method={'nfxp (mle)'}; 
 method={'nfxp (pmle)', 'nfxp (mle)'}; 
 % method={'nfxp (mle)', 'nfxp (pmle)', 'mpec (pmle)'}; % available:  
 
@@ -14,7 +15,7 @@ mp0.bellman_type='ev';  	% bellman in expected value ('ev') or ('iv') integrated
 mp0.pnames_u={'RC', 'c'};	% utility parameters to be estimated
 mp0.pnames_P={'p'};         % set mp0.pnames_P={}; to skip estimation of transition parameters  
 mp0.bustypes=[1,2,3,4];		% Vector with chosen bus types (elements can be 1,2,3,4) 
-
+mp0.ap.sa_min=2;
 % Fill out remaining parameters and update parameter dependencies
 mp=zurcher.setup(mp0);
 
@@ -49,10 +50,7 @@ for i=1:numel(method)
 		fprintf('Beta           = %10.5f \n',mp.beta);
 		fprintf('n              = %10.5f \n',mp.n);
 		fprintf('Sample size    = %10.5f \n',numel(data.d));
-		fprintf('\n'); 
 	end
-	fprintf('\n'); 
-
 	fprintf('\nMethod %s\n', method{i});
 	output.estimates(results, [mp.pnames_u mp.pnames_P], theta_hat, Avar);
 	fprintf('log-likelihood    = %10.5f \n',results.llval);
